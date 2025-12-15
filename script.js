@@ -110,11 +110,21 @@ function tukarTab(idTab, elemen) {
     blokKalendar.classList.add('hidden');
     if (blokDirektori) blokDirektori.classList.add('hidden');
     if (blokKemaskini) blokKemaskini.classList.add('hidden');
+    const blokStatistik = document.getElementById('kandungan-statistik');
+    if (blokStatistik) blokStatistik.classList.add('hidden');
 
     if (idTab === 'laman-dashboard') {
         blokDashboard.classList.remove('hidden');
     } else if (idTab === 'laman-kalender') {
         blokKalendar.classList.remove('hidden');
+    } else if (idTab === 'laman-statistik') {
+        if (blokStatistik) {
+            blokStatistik.classList.remove('hidden');
+            if (typeof renderStatistik === 'function') {
+                renderStatistik(); // Render bila tab dibuka
+                initChartStatistik(); // Initialize chart explicitly when tab opens
+            }
+        }
     } else if (idTab === 'laman-direktori') {
         if (blokDirektori) {
             blokDirektori.classList.remove('hidden');
@@ -142,7 +152,7 @@ function tukarTab(idTab, elemen) {
         let tajukBaru = "Halaman";
         switch (idTab) {
             case 'laman-notifikasi': tajukBaru = "Pusat Notifikasi"; break;
-            case 'laman-statistik': tajukBaru = "Laporan Statistik Terperinci"; break;
+            // Statistik is now handled explicitly above, but keep as fallback if needed
         }
         if (tajukHalaman) tajukHalaman.innerText = tajukBaru;
     }
@@ -796,8 +806,370 @@ if (inputCarian) {
     });
 }
 
-// Jalankan updateUI pada permulaan
-updateUI();
+// 10. MODUL STATISTIK PERJAWATAN (STAFF)
+const senaraiJabatanRaw = `
+Pejabat Ketua Pengarah Alam Sekitar
+Pejabat Timbalan Ketua Pengarah (Pembangunan)
+Bahagian Air & Marin
+Bahagian Bahan Berbahaya
+Bahagian Komunikasi Strategik
+Bahagian Penguatkuasa
+Bahagian Penilaian
+Bahagian Pentadbiran & Kewangan
+Bahagian Teknologi Maklumat
+Bahagian Udara
+Unit Integriti
+Institut Alam Sekitar Malaysia (EiMAS)
+Jabatan Alam Sekitar Negeri Perlis
+Jabatan Alam Sekitar Negeri Kedah
+Jabatan Alam Sekitar Negeri Pulau Pinang
+Jabatan Alam Sekitar Negeri Perak
+Jabatan Alam Sekitar Negeri Selangor
+Jabatan Alam Sekitar Negeri Sembilan
+Jabatan Alam Sekitar Negeri Melaka
+Jabatan Alam Sekitar Negeri Johor
+Jabatan Alam Sekitar Negeri Pahang
+Jabatan Alam Sekitar Negeri Terengganu
+Jabatan Alam Sekitar Negeri Kelantan
+Jabatan Alam Sekitar Negeri Sabah
+Jabatan Alam Sekitar Negeri Sarawak
+Jabatan Alam Sekitar W. P. Kuala Lumpur
+Jabatan Alam Sekitar W.P. Labuan
+Jabatan Alam Sekitar Cawangan Batu Pahat, Johor
+Jabatan Alam Sekitar Cawangan Kluang, Johor
+Jabatan Alam Sekitar Cawangan Muar, Johor
+Jabatan Alam Sekitar Cawangan Pasir Gudang, Johor
+Jabatan Alam Sekitar Cawangan Pengerang, Johor
+Jabatan Alam Sekitar Cawangan Kulim, Kedah
+Jabatan Alam Sekitar Cawangan Langkawi, Kedah
+Jabatan Alam Sekitar Cawangan Sungai Petani, Kedah
+Jabatan Alam Sekitar Cawangan Gua Musang, Kelantan
+Jabatan Alam Sekitar Cawangan Kuala Pilah, Negeri Sembilan
+Jabatan Alam Sekitar Cawangan Cameron Highlands, Pahang
+Jabatan Alam Sekitar Cawangan Gebeng, Pahang
+Jabatan Alam Sekitar Cawangan Rompin, Pahang
+Jabatan Alam Sekitar Cawangan Temerloh, Pahang
+Jabatan Alam Sekitar Cawangan Taiping, Perak
+Jabatan Alam Sekitar Cawangan Teluk Intan, Perak
+Jabatan Alam Sekitar Cawangan Bayan Lepas, Pulau Pinang
+Jabatan Alam Sekitar Cawangan Bintulu, Sabah
+Jabatan Alam Sekitar Cawangan Sipitang, Sabah
+Jabatan Alam Sekitar Cawangan Tawau, Sabah
+Jabatan Alam Sekitar Cawangan Miri, Sarawak
+Jabatan Alam Sekitar Cawangan Sibu, Sarawak
+Jabatan Alam Sekitar Cawangan Gombak, Selangor
+Jabatan Alam Sekitar Cawangan Kajang, Selangor
+Jabatan Alam Sekitar Cawangan Sabak Bernam, Selangor
+Jabatan Alam Sekitar Cawangan Sepang, Selangor
+Jabatan Alam Sekitar Cawangan Kemaman, Terengganu
+Kementerian Kerja Raya Malaysia
+`;
+
+// Bersihkan data raw menjadi array
+const senaraiJabatan = senaraiJabatanRaw.trim().split('\n').filter(item => item.trim() !== '');
+
+// Generate Dummy Data
+let dataStatistik = [];
+let chartInstance = null;
+let dataTelahDiGenerate = false;
+
+function generateStatistikData() {
+    if (dataTelahDiGenerate) return; // Elak generate baru setiap kali tekan tab
+
+    dataStatistik = senaraiJabatan.map((nama, index) => {
+        let min, max;
+        // Penukaran nama kepada lowercase untuk matching
+        const namaLower = nama.toLowerCase();
+
+        // LOGIC STRICT:
+        // 1. JABATAN NEGERI (Priority Paling Tinggi - Paling Ramai)
+        if (namaLower.includes('negeri') && !namaLower.includes('cawangan')) {
+            min = 100;
+            max = 180;
+        }
+        // 2. IBU PEJABAT / BAHAGIAN / KEMENTERIAN (Sederhana)
+        else if (namaLower.includes('bahagian') || namaLower.includes('pejabat') || namaLower.includes('kementerian') || namaLower.includes('institut') || namaLower.includes('unit')) {
+            min = 50;
+            max = 100;
+        }
+        // 3. CAWANGAN (Paling Sikit)
+        else {
+            // Default untuk 'Cawangan' dan lain-lain
+            min = 15;
+            max = 35;
+        }
+
+        // Random count dalam range yang ditetapkan
+        const total = Math.floor(Math.random() * (max - min + 1)) + min;
+
+        // Pecahan Jantina (40-60% Lelaki)
+        const lelaki = Math.floor(total * (Math.random() * (0.6 - 0.4) + 0.4));
+        const perempuan = total - lelaki;
+
+        return {
+            id: index + 1,
+            nama: nama.trim(),
+            total: total,
+            lelaki: lelaki,
+            perempuan: perempuan
+        };
+    });
+
+    // Sort ikut total staff 
+    dataStatistik.sort((a, b) => b.total - a.total);
+
+    dataTelahDiGenerate = true;
+}
+
+function renderStatistik() {
+    generateStatistikData();
+
+    const tbody = document.getElementById('tabel-statistik-body');
+    const statTotal = document.getElementById('stat-total-pegawai');
+    const statLelaki = document.getElementById('stat-total-lelaki');
+    const statPerempuan = document.getElementById('stat-total-perempuan');
+    const senaraiAktiviti = document.getElementById('senarai-aktiviti-stat');
+
+    // Update Filtered Data if search input exists
+    const inputCarianStat = document.getElementById('carian-statistik');
+    let dataPaparan = [...dataStatistik];
+
+    if (inputCarianStat && inputCarianStat.value) {
+        const keyword = inputCarianStat.value.toLowerCase();
+        dataPaparan = dataStatistik.filter(item => item.nama.toLowerCase().includes(keyword));
+    }
+
+    // 1. Render Table
+    if (tbody) {
+        tbody.innerHTML = '';
+        dataPaparan.forEach((item, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50 transition-colors group border-b border-slate-50 last:border-0';
+
+            const nisbah = (item.lelaki / item.perempuan).toFixed(1);
+
+            tr.innerHTML = `
+                <td class="px-4 py-3 text-slate-500 text-xs">${idx + 1}</td>
+                <td class="px-4 py-3">
+                    <div class="font-medium text-slate-800 text-sm">${item.nama}</div>
+                </td>
+                <td class="px-4 py-3 text-center font-bold text-slate-700">${item.total}</td>
+                <td class="px-4 py-3 text-center text-blue-600 font-medium">${item.lelaki}</td>
+                <td class="px-4 py-3 text-center text-pink-600 font-medium">${item.perempuan}</td>
+                <td class="px-4 py-3 text-center text-xs text-slate-500">
+                    ${nisbah} : 1
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Re-init icon
+        lucide.createIcons();
+    }
+
+    // 2. Render Cards Summary (Aggregated)
+    if (statTotal && statLelaki && statPerempuan) {
+        const totalAll = dataStatistik.reduce((sum, item) => sum + item.total, 0);
+        const lAll = dataStatistik.reduce((sum, item) => sum + item.lelaki, 0);
+        const pAll = dataStatistik.reduce((sum, item) => sum + item.perempuan, 0);
+
+        statTotal.innerText = totalAll.toLocaleString();
+        statLelaki.innerText = lAll.toLocaleString();
+        statPerempuan.innerText = pAll.toLocaleString();
+    }
+
+    // 3. Render Chart - REMOVED from here to prevent re-animation on search
+    // initChartStatistik();
+
+    // 4. Render Sidebar "Warga JAS Terkini" removed
+
+}
+
+// Chart Configuration
+let currentChartType = 'bar'; // Default
+
+function initChartStatistik(type = currentChartType) {
+    const ctx = document.getElementById('cartaStatistikUtama');
+    if (!ctx) return;
+
+    // Destroy old chart if exists
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    currentChartType = type; // Update state
+
+    // Ambil Top 10 untuk graf
+    const topData = dataStatistik.slice(0, 10);
+    // Custom label shortening logic
+    const labels = topData.map(d => {
+        let name = d.nama
+            .replace('Jabatan Alam Sekitar', '')
+            .replace('Bahagian', '')
+            .replace('Negeri', '')
+            .replace('Cawangan', '')
+            .trim();
+        return name.length > 25 ? name.substring(0, 25) + '...' : name;
+    });
+    const dataTotal = topData.map(d => d.total);
+
+    // Create Gradient for BAR chart
+    const gradientFill = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+    gradientFill.addColorStop(0, '#6366f1'); // Indigo 500
+    gradientFill.addColorStop(1, '#818cf8'); // Indigo 400
+
+    // Datasets Configuration based on Type
+    const datasets = [];
+    if (type === 'line') {
+        datasets.push({
+            label: 'Jumlah Pegawai',
+            data: dataTotal,
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)', // Light Indigo
+            borderWidth: 3,
+            tension: 0.4, // Smooth curve
+            fill: true,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#6366f1',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+        });
+    } else {
+        // Default BAR
+        datasets.push({
+            label: 'Jumlah Pegawai',
+            data: dataTotal,
+            backgroundColor: gradientFill,
+            borderRadius: 8,
+            borderSkipped: false,
+            barPercentage: 0.6,
+            categoryPercentage: 0.8
+        });
+    }
+
+    chartInstance = new Chart(ctx, {
+        type: type,
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)', // Slate 900
+                    titleColor: '#f8fafc',
+                    bodyColor: '#e2e8f0',
+                    padding: 14,
+                    cornerRadius: 12,
+                    displayColors: false,
+                    callbacks: {
+                        title: (items) => topData[items[0].dataIndex].nama
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    border: {
+                        display: false
+                    },
+                    grid: {
+                        color: '#f1f5f9',
+                        borderDash: [5, 5]
+                    },
+                    ticks: {
+                        font: {
+                            family: "'Poppins', sans-serif",
+                            size: 11
+                        },
+                        color: '#64748b'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    border: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            family: "'Poppins', sans-serif",
+                            size: 11
+                        },
+                        color: '#64748b',
+                        maxRotation: 0,
+                        autoSkip: false,
+                        // Simple logic to wrap text
+                        callback: function (val, index) {
+                            const label = this.getLabelForValue(val);
+                            if (label.length > 15) {
+                                return label.split(' ').slice(0, 2).join(' ') + '...';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 800, // Faster animation for switch
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+// 11. CHART MENU DROPDOWN LOGIC
+const btnFilterChart = document.getElementById('btn-filter-chart');
+const menuFilterChart = document.getElementById('menu-filter-chart');
+const optChartBar = document.getElementById('opt-chart-bar');
+const optChartLine = document.getElementById('opt-chart-line');
+
+if (btnFilterChart && menuFilterChart) {
+    // Toggle Menu
+    btnFilterChart.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuFilterChart.classList.toggle('hidden');
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!menuFilterChart.contains(e.target) && !btnFilterChart.contains(e.target)) {
+            menuFilterChart.classList.add('hidden');
+        }
+    });
+
+    // Option: Bar Chart
+    if (optChartBar) {
+        optChartBar.addEventListener('click', () => {
+            initChartStatistik('bar');
+            menuFilterChart.classList.add('hidden');
+        });
+    }
+
+    // Option: Line Chart
+    if (optChartLine) {
+        optChartLine.addEventListener('click', () => {
+            initChartStatistik('line');
+            menuFilterChart.classList.add('hidden');
+        });
+    }
+}
+
+// Event Listener untuk Search Statistik
+const searchInputStat = document.getElementById('carian-statistik');
+if (searchInputStat) {
+    searchInputStat.addEventListener('input', () => {
+        renderStatistik();
+    });
+}
+
 
 // ==========================================
 // 10. MODUL PENGEMASKINIAN (LOGIK BARU)
@@ -1164,7 +1536,7 @@ if (btnKosongkanGred) btnKosongkanGred.addEventListener('click', kosongkanBorang
 if (btnKemaskiniGred) {
     btnKemaskiniGred.addEventListener('click', () => {
         if (pegawaiSedangDieditGredIndex === null) {
-            tunjukPopup('Sila cari pegawai gred dahulu.');
+            tunjukPopup('Sila cari pegawai gred dahulu.', 'negatif');
             return;
         }
 
