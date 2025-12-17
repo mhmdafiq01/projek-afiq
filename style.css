@@ -1,0 +1,183 @@
+/* Custom Scrollbar (Batang skrol tepi) */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* 1. Class: .item-navigasi (Link Menu Kiri) */
+/* Kita guna 'transition' supaya warna berubah perlahan-lahan bila mouse lalu */
+.item-navigasi {
+    transition: all 0.3s ease;
+}
+
+/* 2. Class: .navigasi-aktif (Menu yang sedang dibuka) */
+/* Efek kaca (Glassmorphism) dan border tepi warna ungu */
+.navigasi-aktif {
+    background: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid #6366f1;
+    /* Warna Indigo */
+    color: #ffffff;
+    backdrop-filter: blur(10px);
+}
+
+/* 3. Class: .kad-dashboard (Kotak-kotak dalam dashboard) */
+/* Efek timbul (float) bila mouse lalu atas kotak */
+.kad-dashboard {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kad-dashboard:hover {
+    transform: translateY(-5px);
+    /* Naik sikit ke atas */
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* 4. Animasi Masuk (Fade In) */
+.animasi-masuk {
+    animation: gerakMasuk 0.5s ease-in-out;
+}
+
+@keyframes gerakMasuk {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* PREMIUM DASHBOARD STYLES */
+
+/* Glass Effect */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Gradient Text for Big Numbers */
+.text-gradient-primary {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-gradient-emerald {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Premium Card Hover */
+.card-premium {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-premium:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Custom Grid Pattern Background */
+.bg-grid-pattern {
+    background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+        linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+/* 5. Hospital Monitor Pulse Animation (Sharp Beat) */
+@keyframes monitor-beat {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    10% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+
+    /* Sharp Beat */
+    20% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    30% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+
+    /* Echo Beat */
+    40% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    /* Pause */
+}
+
+.animasi-degup {
+    animation: monitor-beat 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    display: inline-block;
+    transform-origin: center;
+}
+
+/* 6. Premium Sonar Wave (Double Pulse) */
+@keyframes sonar-wave {
+    0% {
+        transform: scale(0.9);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+.animasi-sonar {
+    position: relative;
+    /* Central Glow */
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+
+/* Create two ripple waves */
+.animasi-sonar::before,
+.animasi-sonar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-color: rgba(16, 185, 129, 0.4);
+    animation: sonar-wave 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    z-index: -1;
+}
+
+.animasi-sonar::after {
+    animation-delay: 1s;
+    /* Stagger the second wave */
+}
