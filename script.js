@@ -1887,7 +1887,7 @@ function renderHistoryTimeline(history) {
         'c9': 'Gred C9',
         'c10': 'Gred 10',
         'c12': 'Gred 12',
-        'g13': 'Gred 13',
+        'c13': 'Gred 13',
         'c14': 'Gred 14',
         'jusa-c': 'JUSA C',
         'jusa-b': 'JUSA B',
