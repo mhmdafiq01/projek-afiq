@@ -659,7 +659,7 @@ const dataPegawai = [
         ic: '780312-08-6677',
         umur: 46,
         gred: 'C12',
-        jawatan: 'Jurutera Kanan',
+        jawatan: 'Pegawai Kawalan Kanan',
         lokasi: 'JAS Negeri Perak',
         tarikhLantik: '2003-05-12',
         kelayakan1: 'Ijazah Sarjana Muda Kejuruteraan Awam',
