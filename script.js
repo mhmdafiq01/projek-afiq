@@ -2225,7 +2225,7 @@ function renderLogAktiviti() {
                          <span class="text-[10px] font-bold text-white bg-${colorClass}-500 px-2 py-0.5 rounded shadow-sm">${log.aksi}</span>
                          <span class="text-xs font-semibold text-slate-500">Oleh: ${log.admin}</span>
                      </div>
-                     <span class="text-[10px] text-slate-400 font-mono">${dateStr} ${timeStr}</span>
+                     <span class="text-xs text-slate-400 font-mono">${dateStr} ${timeStr}</span>
                 </div>
                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 hover:shadow-sm transition-shadow">
                     <p class="text-sm text-slate-700 font-medium">${log.butiran}</p>
